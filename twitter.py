@@ -1,3 +1,5 @@
+import os
+import configparser
 from collections import namedtuple
 from credentials_reader import CredentialsReader
 
@@ -47,34 +49,67 @@ class TweetsHashtag(Tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
+class TwitterDataConfig(object):
+    def __init__(self, data_configs="data_configs", config_ini="twitter.ini"):
+        self.config = configparser.ConfigParser()
+        self.config.read(os.path.join(data_configs, config_ini))
+
+    @property
+    def twitter(self):
+        _twitter_section = 'twitter'
+        try:
+            _items = self.config[_twitter_section].items()
+            _twitter = namedtuple(
+                'twitter', self.config.options(_twitter_section))
+            return _twitter(**{key: value for (key, value) in _items})
+        except configparser.NoSectionError:
+            raise RuntimeError('Cannot find twitter data configuration in twitter.ini')
+
+
+class TwitterDataFetcher(object):
+    def __init__(self, twitter_config_obj, auth_obj=None):
+        self.users_to_observe = twitter_config_obj.users.split(',')
+        self.tags_to_observe = twitter_config_obj.hashtags.split(',')
+
+        if auth_obj:
+            self.auth = auth_obj
+        else:
+            self.auth = self.default_auth
+
+        self.api = get_twitter_api(self.auth)
+
+    @property
+    def default_auth(self):
+        _credentials = CredentialsReader('credentials.ini')
+        return get_0auth(
+            api_key=_credentials.twitter.api_key,
+            api_secret_key=_credentials.twitter.api_secret_key,
+            access_token=_credentials.twitter.access_token,
+            access_secret=_credentials.twitter.access_secret)
+
+    def get_hashtag_tweets(self, hashtags=None, since=None):
+        tweets = TweetsHashtag(api=self.api)
+        if self.tags_to_observe:
+            hashtags = self.tags_to_observe
+        for hashtag in hashtags:
+            for _tweet in tweets(hashtag, since):
+                yield _tweet
+
+    def get_user_tweets(self, users=None):
+        tweets = TweetsUser(api=self.api)
+        if self.users_to_observe:
+            users = self.users_to_observe
+        for user in users:
+            for _tweet in tweets(user):
+                yield _tweet
+
+
 if __name__ == "__main__":
 
-    credentials = CredentialsReader('credentials.ini')
-    __api_key = credentials.twitter.api_key
-    __api_secret_key = credentials.twitter.api_secret_key
-    __access_token = credentials.twitter.access_token
-    __access_secret = credentials.twitter.access_secret
-
-    api = get_twitter_api(auth=get_0auth(
-        __api_key, __api_secret_key, __access_token, __access_secret))
-
-
-    def print_user_tweets(users):
-        tweets = TweetsUser(api=api)
-        for user in users:
-            for tweet in tweets(user):
-                print(user, tweet)
-
-    users = ['gvanrossum', 'raymondh']
-    #print_user_tweets(users)
-
-    def print_hashtag_tweets(hashtags, since):
-        tweets = TweetsHashtag(api=api)
-        for hashtag in hashtags:
-            for tweet in tweets(hashtag, since):
-                print(hashtag, tweet)
-
-    hashtags = ['#python']
+    twitter_data_config = TwitterDataConfig().twitter
+    twitter_data_fetcher = TwitterDataFetcher(twitter_data_config)
 
     from datetime import date
-    print_hashtag_tweets(hashtags, since=str(date.today()))
+    tweets = twitter_data_fetcher.get_hashtag_tweets(since=str(date.today()))
+    for tweet in tweets:
+        print(tweet)
