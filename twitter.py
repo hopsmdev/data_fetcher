@@ -1,7 +1,6 @@
 import os
-import configparser
 from collections import namedtuple
-from credentials_reader import CredentialsReader
+from config_reader import ConfigReader
 
 import tweepy
 
@@ -14,6 +13,12 @@ def get_0auth(api_key, api_secret_key, access_token, access_secret):
 
 def get_twitter_api(auth):
         return tweepy.API(auth)
+
+
+def get_twitter_data_config(
+        data_configs="data_configs", config_ini="twitter.ini"):
+    return ConfigReader(
+        config_path=os.path.join(data_configs, config_ini)).twitter
 
 
 class Tweets(object):
@@ -49,23 +54,6 @@ class TweetsHashtag(Tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
-class TwitterDataConfig(object):
-    def __init__(self, data_configs="data_configs", config_ini="twitter.ini"):
-        self.config = configparser.ConfigParser()
-        self.config.read(os.path.join(data_configs, config_ini))
-
-    @property
-    def twitter(self):
-        _twitter_section = 'twitter'
-        try:
-            _items = self.config[_twitter_section].items()
-            _twitter = namedtuple(
-                'twitter', self.config.options(_twitter_section))
-            return _twitter(**{key: value for (key, value) in _items})
-        except configparser.NoSectionError:
-            raise RuntimeError('Cannot find twitter data configuration in twitter.ini')
-
-
 class TwitterDataFetcher(object):
     def __init__(self, twitter_config_obj, auth_obj=None):
         self.users_to_observe = twitter_config_obj.users.split(',')
@@ -80,7 +68,7 @@ class TwitterDataFetcher(object):
 
     @property
     def default_auth(self):
-        _credentials = CredentialsReader('credentials.ini')
+        _credentials = ConfigReader('credentials.ini')
         return get_0auth(
             api_key=_credentials.twitter.api_key,
             api_secret_key=_credentials.twitter.api_secret_key,
@@ -106,7 +94,8 @@ class TwitterDataFetcher(object):
 
 if __name__ == "__main__":
 
-    twitter_data_config = TwitterDataConfig().twitter
+    twitter_data_config = get_twitter_data_config(
+        data_configs="data_configs", config_ini="twitter.ini")
     twitter_data_fetcher = TwitterDataFetcher(twitter_data_config)
 
     from datetime import date
