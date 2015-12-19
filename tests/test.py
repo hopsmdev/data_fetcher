@@ -1,9 +1,13 @@
+import os
 import unittest
+
+from tests import CURRENT_DIR
+
 import twitter
 from config_reader import ConfigReader
 
 
-CREDENTIALS_INI = "test_credentials.ini"
+CREDENTIALS_INI = os.path.abspath(os.path.join(CURRENT_DIR, 'test_credentials.ini'))
 
 
 class ConfigReaderTest(unittest.TestCase):
