@@ -3,11 +3,14 @@ import twitter
 from config_reader import ConfigReader
 
 
+CREDENTIALS_INI = "test_credentials.ini"
+
+
 class ConfigReaderTest(unittest.TestCase):
 
     def setUp(self):
-        credentials_path = '../credentials.ini'
-        self.credentials_reader = ConfigReader(credentials_path)
+        self.credentials_reader = ConfigReader(
+            config_path=CREDENTIALS_INI)
 
     def test_twitter(self):
         print(self.credentials_reader.twitter.api_key)
@@ -20,7 +23,7 @@ class ConfigReaderTest(unittest.TestCase):
 class GetTweetsTest(unittest.TestCase):
 
     def setUp(self):
-        credentials = ConfigReader()
+        credentials = ConfigReader(config_path=CREDENTIALS_INI)
         self.__api_key = credentials.twitter.api_key
         self.__api_secret_key = credentials.twitter.api_secret_key
         self.__access_token = credentials.twitter.access_token
