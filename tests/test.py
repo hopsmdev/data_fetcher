@@ -1,6 +1,6 @@
 import os
 import unittest
-
+import tweepy
 from tests import CURRENT_DIR
 
 import twitter
@@ -17,8 +17,14 @@ class ConfigReaderTest(unittest.TestCase):
             config_path=CREDENTIALS_INI)
 
     def test_twitter(self):
-        print(self.credentials_reader.twitter.api_key)
-        print(self.credentials_reader.twitter.api_secret_key)
+        self.assertEqual(
+            self.credentials_reader.twitter.api_key, 'secretkey')
+        self.assertEqual(
+            self.credentials_reader.twitter.api_secret_key, 'secretkey')
+        self.assertEqual(
+            self.credentials_reader.twitter.access_token, 'secretkey')
+        self.assertEqual(
+            self.credentials_reader.twitter.access_secret, 'secretkey')
 
     def test_attr_noexist(self):
         self.assertEqual(self.credentials_reader.noexists, None)
@@ -39,6 +45,7 @@ class GetTweetsTest(unittest.TestCase):
             self.__api_secret_key,
             self.__access_token,
             self.__access_secret)
+        self.assertIsInstance(auth, tweepy.auth.OAuthHandler)
 
 
 if __name__ == "__main__":
