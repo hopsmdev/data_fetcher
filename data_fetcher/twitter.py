@@ -14,37 +14,6 @@ CREDENTIALS_INI = os.path.abspath(
     os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
 
 
-def get_0auth(api_key, api_secret_key, access_token, access_secret):
-    auth = tweepy.OAuthHandler(api_key, api_secret_key)
-    auth.set_access_token(access_token, access_secret)
-    return auth
-
-
-def get_twitter_api(auth=None):
-    """
-    :param auth: tweepy.OAuthHandler object,
-        if None we are using default auth obj
-    :return:
-    """
-    if auth:
-        _auth = auth
-    else:
-        _credentials = ConfigReader(CREDENTIALS_INI)
-        print("--->", _credentials)
-        _auth = get_0auth(
-            api_key=_credentials.twitter.api_key,
-            api_secret_key=_credentials.twitter.api_secret_key,
-            access_token=_credentials.twitter.access_token,
-            access_secret=_credentials.twitter.access_secret)
-    return tweepy.API(_auth)
-
-
-def get_twitter_data_config(
-        data_configs="data_configs", config_ini="twitter.ini"):
-    return ConfigReader(
-        config_path=os.path.join(data_configs, config_ini)).twitter
-
-
 class Tweets(object):
     def __init__(self, api):
         self.api = api
@@ -95,6 +64,37 @@ class TweetsHashtag(Tweets):
         for obj in tweepy.Cursor(
                 self.api.search, **search_params).items(number_of_tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
+
+
+def get_0auth(api_key, api_secret_key, access_token, access_secret):
+    auth = tweepy.OAuthHandler(api_key, api_secret_key)
+    auth.set_access_token(access_token, access_secret)
+    return auth
+
+
+def get_twitter_api(auth=None):
+    """
+    :param auth: tweepy.OAuthHandler object,
+        if None we are using default auth obj
+    :return:
+    """
+    if auth:
+        _auth = auth
+    else:
+        _credentials = ConfigReader(CREDENTIALS_INI)
+        print("--->", _credentials)
+        _auth = get_0auth(
+            api_key=_credentials.twitter.api_key,
+            api_secret_key=_credentials.twitter.api_secret_key,
+            access_token=_credentials.twitter.access_token,
+            access_secret=_credentials.twitter.access_secret)
+    return tweepy.API(_auth)
+
+
+def get_twitter_data_config(
+        data_configs="data_configs", config_ini="twitter.ini"):
+    return ConfigReader(
+        config_path=os.path.join(data_configs, config_ini)).twitter
 
 
 def get_hashtag_tweets(api, hashtag=None, since=None):
