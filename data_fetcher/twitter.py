@@ -7,14 +7,32 @@ import tweepy
 from data_fetcher.config_reader import ConfigReader
 
 
+CREDENTIALS_INI = '../credentials.ini'
+
+
 def get_0auth(api_key, api_secret_key, access_token, access_secret):
     auth = tweepy.OAuthHandler(api_key, api_secret_key)
     auth.set_access_token(access_token, access_secret)
     return auth
 
 
-def get_twitter_api(auth):
-        return tweepy.API(auth)
+def get_twitter_api(auth=None):
+    """
+    :param auth: tweepy.OAuthHandler object,
+        if None we are using default auth obj
+    :return:
+    """
+    if auth:
+        _auth = auth
+    else:
+        _credentials = ConfigReader(CREDENTIALS_INI)
+        print("--->", _credentials)
+        _auth = get_0auth(
+            api_key=_credentials.twitter.api_key,
+            api_secret_key=_credentials.twitter.api_secret_key,
+            access_token=_credentials.twitter.access_token,
+            access_secret=_credentials.twitter.access_secret)
+    return tweepy.API(_auth)
 
 
 def get_twitter_data_config(
@@ -47,6 +65,8 @@ class TweetsUser(Tweets):
             datetime.datetime.today()
         :return: tweepy Status object generator
         """
+        if not number_of_tweets:
+            number_of_tweets = 0
         for obj in tweepy.Cursor(
                 self.api.user_timeline,
                 screen_name=user).items(number_of_tweets):
@@ -73,32 +93,14 @@ class TweetsHashtag(Tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
-class TwitterDataFetcher(object):
-    def __init__(self, auth_obj=None):
-
-        if auth_obj:
-            self.auth = auth_obj
-        else:
-            self.auth = self.default_auth
-
-        self.api = get_twitter_api(self.auth)
-
-    @property
-    def default_auth(self):
-        _credentials = ConfigReader('credentials.ini')
-        return get_0auth(
-            api_key=_credentials.twitter.api_key,
-            api_secret_key=_credentials.twitter.api_secret_key,
-            access_token=_credentials.twitter.access_token,
-            access_secret=_credentials.twitter.access_secret)
-
-    def get_hashtag_tweets(self, hashtag=None, since=None):
-        _tweets = TweetsHashtag(api=self.api)
+def get_hashtag_tweets(api, hashtag=None, since=None):
+        _tweets = TweetsHashtag(api)
         for _tweet in _tweets(hashtag, since):
                 yield _tweet
 
-    def get_user_tweets(self, user, number_of_tweets, since):
-        _tweets = TweetsUser(api=self.api)
+
+def get_user_tweets(api, user, number_of_tweets=None, since=None):
+        _tweets = TweetsUser(api)
         for _tweet in _tweets(
                 user=user, number_of_tweets=number_of_tweets, since=since):
             yield _tweet
@@ -106,18 +108,18 @@ class TwitterDataFetcher(object):
 
 if __name__ == "__main__":
 
+    """
     twitter_data_config = get_twitter_data_config(
         data_configs="data_configs", config_ini="twitter.ini")
 
     users_to_observe = twitter_data_config.users.split(',')
     tags_to_observe = twitter_data_config.hashtags.split(',')
+    """
 
-    twitter_data_fetcher = TwitterDataFetcher()
-
-    from datetime import date
-    #tweets = twitter_data_fetcher.get_hashtag_tweets(since=str(date.today()))
-    tweets = twitter_data_fetcher.get_user_tweets(
-        user="gvanrossum", since=datetime.datetime(2015, 12, 14, 16, 34, 33))
+    api = get_twitter_api()
+    tweets = get_user_tweets(
+        api, user="gvanrossum",
+        number_of_tweets=0, since=datetime.datetime(2015, 12, 14, 16, 34, 33))
 
     for tweet in tweets:
         print(tweet)
