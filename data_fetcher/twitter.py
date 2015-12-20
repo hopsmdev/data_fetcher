@@ -1,8 +1,9 @@
 import os
 from collections import namedtuple
-from config_reader import ConfigReader
 
 import tweepy
+
+from data_fetcher.config_reader import ConfigReader
 
 
 def get_0auth(api_key, api_secret_key, access_token, access_secret):
@@ -76,7 +77,7 @@ class TwitterDataFetcher(object):
             access_secret=_credentials.twitter.access_secret)
 
     def get_hashtag_tweets(self, hashtags=None, since=None):
-        tweets = TweetsHashtag(api=self.api)
+        _tweets = TweetsHashtag(api=self.api)
         if self.tags_to_observe:
             hashtags = self.tags_to_observe
         for hashtag in hashtags:
@@ -84,7 +85,7 @@ class TwitterDataFetcher(object):
                 yield _tweet
 
     def get_user_tweets(self, users=None):
-        tweets = TweetsUser(api=self.api)
+        _tweets = TweetsUser(api=self.api)
         if self.users_to_observe:
             users = self.users_to_observe
         for user in users:

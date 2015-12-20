@@ -18,7 +18,7 @@ class ConfigReader(object):
     def __init__(self, config_path='../credentials.ini'):
         self.config_path = config_path
         self.config = configparser.ConfigParser()
-        self.config.read(config_path)
+        self.config.read(self.config_path)
 
     def __getattr__(self, item):
         if item in self.__attrs__:

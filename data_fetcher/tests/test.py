@@ -1,11 +1,11 @@
 import os
 import unittest
+
 import tweepy
-from tests import CURRENT_DIR
+from data_fetcher.config_reader import ConfigReader
 
-import twitter
-from config_reader import ConfigReader
-
+from data_fetcher import twitter
+from data_fetcher.tests import CURRENT_DIR
 
 CREDENTIALS_INI = os.path.abspath(os.path.join(CURRENT_DIR, 'test_credentials.ini'))
 
