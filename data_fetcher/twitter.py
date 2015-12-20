@@ -4,10 +4,14 @@ from collections import namedtuple
 
 import tweepy
 
+# TODO fix relative imports
+
+from data_fetcher import CURRENT_DIR
 from data_fetcher.config_reader import ConfigReader
 
 
-CREDENTIALS_INI = '../credentials.ini'
+CREDENTIALS_INI = os.path.abspath(
+    os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
 
 
 def get_0auth(api_key, api_secret_key, access_token, access_secret):
@@ -66,7 +70,7 @@ class TweetsUser(Tweets):
         :return: tweepy Status object generator
         """
         if not number_of_tweets:
-            number_of_tweets = 0
+            number_of_tweets = 1000
         for obj in tweepy.Cursor(
                 self.api.user_timeline,
                 screen_name=user).items(number_of_tweets):
