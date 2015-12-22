@@ -67,7 +67,7 @@ class TweetsHashtag(Tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
-def get_environ_credentials():
+def get_env_credentials():
     logger.info("Get Twitter credentials from ENV")
     return {
         'api_key': os.environ.get('TWITTER_API_KEY', ''),
@@ -77,11 +77,14 @@ def get_environ_credentials():
     }
 
 
-def get_fromfile_credentials():
+def get_fromfile_credentials(credentials_ini=None):
 
-    logger.info("Get Twitter credentials from {}".format(CREDENTIALS_INI))
+    if not credentials_ini:
+        credentials_ini = CREDENTIALS_INI
+
+    logger.info("Get Twitter credentials from {}".format(credentials_ini))
     try:
-        credentials_config = ConfigReader(CREDENTIALS_INI)
+        credentials_config = ConfigReader(credentials_ini)
     except ConfigReaderException:
         return False
 
@@ -93,22 +96,19 @@ def get_fromfile_credentials():
      }
 
 
-def get_twitter_credentials():
+def get_twitter_credentials(credentials_ini=None):
 
-    oauth = get_fromfile_credentials() or get_environ_credentials()
+    oauth = get_fromfile_credentials(credentials_ini) or get_env_credentials()
     credentials = namedtuple('credentials', oauth.keys())
     return credentials(**oauth)
 
 
-def get_0auth(credentials=None):
+def get_0auth(credentials_ini=None):
 
-    if not credentials:
-        credentials = get_twitter_credentials()
+    _cred = get_twitter_credentials(credentials_ini)
 
-    auth = tweepy.OAuthHandler(
-        credentials.api_key, credentials.api_secret_key)
-    auth.set_access_token(
-        credentials.access_token, credentials.access_token_secret)
+    auth = tweepy.OAuthHandler(_cred.api_key, _cred.api_secret_key)
+    auth.set_access_token(_cred.access_token, _cred.access_token_secret)
     return auth
 
 
