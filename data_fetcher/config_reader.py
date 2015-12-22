@@ -1,5 +1,15 @@
+import os
 import configparser
 from collections import namedtuple
+from data_fetcher import CURRENT_DIR
+
+
+CREDENTIALS_INI = os.path.abspath(
+    os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
+
+
+class ConfigReaderException(Exception):
+    pass
 
 
 class ConfigReader(object):
@@ -15,10 +25,12 @@ class ConfigReader(object):
 
     __attrs__ = ['twitter']
 
-    def __init__(self, config_path='../credentials.ini'):
+    def __init__(self, config_path=CREDENTIALS_INI):
         self.config_path = config_path
         self.config = configparser.ConfigParser()
-        self.config.read(self.config_path)
+        parsed_config_files  = self.config.read(self.config_path)
+        if not parsed_config_files:
+            raise ConfigReaderException('Cannot find configuration file')
 
     def __getattr__(self, item):
         if item in self.__attrs__:
@@ -29,6 +41,6 @@ class ConfigReader(object):
                     _section, self.config.options(_section))
                 return _attribute(**{key: value for (key, value) in _items})
             except configparser.NoSectionError:
-                raise RuntimeError(
+                raise ConfigReaderException(
                     'Cannot find {} section in {}'.format(
                         _section, self.config_path))
