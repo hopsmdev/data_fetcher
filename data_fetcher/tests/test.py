@@ -1,11 +1,13 @@
 import os
 import unittest
+from collections import namedtuple
 
 import tweepy
 from data_fetcher.config_reader import ConfigReader
 
 from data_fetcher import twitter
 from data_fetcher.tests import CURRENT_DIR
+
 
 CREDENTIALS_INI = os.path.abspath(os.path.join(CURRENT_DIR, 'test_credentials.ini'))
 
@@ -30,23 +32,43 @@ class ConfigReaderTest(unittest.TestCase):
         self.assertEqual(self.credentials_reader.noexists, None)
 
 
-class GetTweetsTest(unittest.TestCase):
+class TestTwitterCredentials(unittest.TestCase):
 
     def setUp(self):
-        credentials = ConfigReader(config_path=CREDENTIALS_INI)
-        self.__api_key = credentials.twitter.api_key
-        self.__api_secret_key = credentials.twitter.api_secret_key
-        self.__access_token = credentials.twitter.access_token
-        self.__access_secret = credentials.twitter.access_secret
+        self.credentials = {
+            'access_token_secret': 'secretkey',
+            'access_token': 'secretkey',
+            'api_secret_key': 'secretkey',
+            'api_key': 'secretkey'
+        }
 
-    def test_oauth(self):
-        auth = twitter.get_0auth(
-            self.__api_key,
-            self.__api_secret_key,
-            self.__access_token,
-            self.__access_secret)
+        os.environ.update({
+            'TWITTER_API_KEY': 'secretkey',
+            'TWITTER_API_SECRET': 'secretkey',
+            'TWITTER_ACCESS_TOKEN': 'secretkey',
+            'TWITTER_ACCESS_SECRET': 'secretkey'
+        })
+
+    def test_get_fromfile_credentials(self):
+        fromfile_credentials = twitter.get_fromfile_credentials(CREDENTIALS_INI)
+        self.assertDictEqual(fromfile_credentials, self.credentials)
+
+    def test_get_env_credentials(self):
+        env_credentials = twitter.get_env_credentials()
+        self.assertDictEqual(env_credentials, self.credentials)
+
+    def test_get_0auth_with_credentials_ini(self):
+        auth = twitter.get_0auth(credentials_ini=CREDENTIALS_INI)
         self.assertIsInstance(auth, tweepy.auth.OAuthHandler)
 
+
+class TwitterTest(unittest.TestCase):
+
+    def setUp(self):
+        self.auth = twitter.get_0auth(credentials_ini=CREDENTIALS_INI)
+
+    def test_get_twitter_api(self):
+        self.assertIsInstance(twitter.get_twitter_api(auth=self.auth), tweepy.API)
 
 if __name__ == "__main__":
     unittest.main()
