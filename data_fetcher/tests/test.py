@@ -82,7 +82,7 @@ class TestTwitterAPI(unittest.TestCase):
     def test_get_hashtag_tweets(self):
         tweets = twitter.get_hashtag_tweets(
             api=twitter.get_twitter_api(auth=self.auth),
-            hashtag="#python",
+            query="#python",
             since=datetime.datetime.today())
         print(tweets)
         for tweet in tweets:

@@ -10,6 +10,7 @@ from data_fetcher import CURRENT_DIR
 from data_fetcher import logger
 from data_fetcher.config_reader import ConfigReader, ConfigReaderException
 
+
 MAX_TWEETS_NUMBER = 1000
 CREDENTIALS_INI = os.path.abspath(
     os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
@@ -53,17 +54,18 @@ class TweetsUser(Tweets):
                 yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
-class TweetsHashtag(Tweets):
+class TweetsQuery(Tweets):
     def __init__(self, api):
         self.api = api
-        super(TweetsHashtag, self).__init__(api)
+        super(TweetsQuery, self).__init__(api)
 
-    def __call__(self, hashtag, since, number_of_tweets=20):
-        search_params = {
-            'q': hashtag, 'since': since, 'lang': 'en'}
+    def __call__(self, query, since, number_of_tweets=20):
+        if not number_of_tweets:
+            number_of_tweets = MAX_TWEETS_NUMBER
 
         for obj in tweepy.Cursor(
-                self.api.search, **search_params).items(number_of_tweets):
+                self.api.search,
+                q=query, lang='en').items(number_of_tweets):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
@@ -127,9 +129,9 @@ def get_twitter_data_config(
         config_path=os.path.join(data_configs, config_ini)).twitter
 
 
-def get_hashtag_tweets(api, hashtag=None, since=None):
-        _tweets = TweetsHashtag(api)
-        for _tweet in _tweets(hashtag, since):
+def get_hashtag_tweets(api, query=None, since=None):
+        _tweets = TweetsQuery(api)
+        for _tweet in _tweets(query, since):
             yield _tweet
 
 
@@ -142,10 +144,19 @@ def get_user_tweets(api, user, number_of_tweets=None, since=None):
 
 def main():
     auth = get_0auth()
-    api = get_twitter_api(auth)
     tweets = get_user_tweets(
-        api, user="gvanrossum",
-        number_of_tweets=0, since=datetime.datetime(2015, 12, 14, 16, 34, 33))
+        api=get_twitter_api(auth),
+        user="gvanrossum",
+        number_of_tweets=0,
+        since=datetime.datetime(2015, 12, 14, 16, 34, 33))
+
+    for tweet in tweets:
+        print(tweet)
+
+    tweets = get_hashtag_tweets(
+        api=get_twitter_api(auth),
+        query="python",
+        since=datetime.datetime.today())
 
     for tweet in tweets:
         print(tweet)
