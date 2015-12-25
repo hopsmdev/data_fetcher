@@ -3,9 +3,16 @@ import configparser
 from collections import namedtuple
 from data_fetcher import CURRENT_DIR
 
-
 CREDENTIALS_INI = os.path.abspath(
     os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
+
+
+def get_config_parser(config_file=None):
+    config_parser = configparser.ConfigParser()
+    parsed_config_files = config_parser.read(config_file)
+    if not parsed_config_files:
+        raise ConfigReaderException('Cannot find configuration file')
+    return config_parser
 
 
 class ConfigReaderException(Exception):
@@ -20,27 +27,23 @@ class ConfigReader(object):
 
     Attributes for object generated according to sections
     in credentials.ini file - you should add attribute name
-    to __attrs__ list.
+    to sections list.
     """
 
-    __attrs__ = ['twitter']
+    def __init__(self, config_file=CREDENTIALS_INI):
+        self.config_parser = get_config_parser(config_file)
+        self.config_file = config_file
+        self.sections = self.config_parser.sections()
 
-    def __init__(self, config_path=CREDENTIALS_INI):
-        self.config_path = config_path
-        self.config = configparser.ConfigParser()
-        parsed_config_files  = self.config.read(self.config_path)
-        if not parsed_config_files:
-            raise ConfigReaderException('Cannot find configuration file')
-
-    def __getattr__(self, item):
-        if item in self.__attrs__:
-            _section = item
-            try:
-                _items = self.config[_section].items()
-                _attribute = namedtuple(
-                    _section, self.config.options(_section))
-                return _attribute(**{key: value for (key, value) in _items})
-            except configparser.NoSectionError:
-                raise ConfigReaderException(
-                    'Cannot find {} section in {}'.format(
-                        _section, self.config_path))
+    def __getattr__(self, section):
+        if section not in self.sections:
+            return
+        try:
+            items = self.config_parser[section].items()
+            _attribute = namedtuple(
+                section, self.config_parser.options(section))
+            return _attribute(**{key: value for (key, value) in items})
+        except configparser.NoSectionError:
+            msg = 'Cannot find {} section in {}'.format(
+                section, self.config_file)
+            raise ConfigReaderException(msg)
