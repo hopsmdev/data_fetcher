@@ -1,7 +1,6 @@
 import os
 import unittest
-from collections import namedtuple
-
+import datetime
 import tweepy
 from data_fetcher.config_reader import ConfigReader
 
@@ -16,7 +15,7 @@ class ConfigReaderTest(unittest.TestCase):
 
     def setUp(self):
         self.credentials_reader = ConfigReader(
-            config_path=CREDENTIALS_INI)
+            config_file=CREDENTIALS_INI)
 
     def test_twitter(self):
         self.assertEqual(
@@ -62,13 +61,34 @@ class TestTwitterCredentials(unittest.TestCase):
         self.assertIsInstance(auth, tweepy.auth.OAuthHandler)
 
 
-class TwitterTest(unittest.TestCase):
+class TestTwitterAPI(unittest.TestCase):
 
     def setUp(self):
-        self.auth = twitter.get_0auth(credentials_ini=CREDENTIALS_INI)
+        self.auth = twitter.get_0auth()
 
     def test_get_twitter_api(self):
         self.assertIsInstance(twitter.get_twitter_api(auth=self.auth), tweepy.API)
+
+    def test_get_user_tweets(self):
+        tweets = twitter.get_user_tweets(
+            api=twitter.get_twitter_api(auth=self.auth),
+            user="gvanrossum",
+            number_of_tweets=5,
+            since=datetime.datetime.today())
+        print(tweets)
+        for tweet in tweets:
+            print(tweet)
+
+    def test_get_hashtag_tweets(self):
+        tweets = twitter.get_hashtag_tweets(
+            api=twitter.get_twitter_api(auth=self.auth),
+            hashtag="#python",
+            since=datetime.datetime.today())
+        print(tweets)
+        for tweet in tweets:
+            print(tweet)
+
+
 
 if __name__ == "__main__":
     unittest.main()
