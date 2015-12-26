@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime, timedelta
 from functools import partial
 from collections import namedtuple
 from pprint import pprint
@@ -160,23 +160,36 @@ last_10_tweets = partial(get_user_tweets,
                          get_twitter_api(get_0auth()), number_of_tweets=10)
 
 
+last_24h_tweets = partial(get_user_tweets,
+                          get_twitter_api(get_0auth()),
+                          number_of_tweets=100,
+                          since=datetime.now() - timedelta(days=1))
+
+
+last_week_tweets = partial(get_user_tweets,
+                           get_twitter_api(get_0auth()),
+                           number_of_tweets=100,
+                           since=datetime.now() - timedelta(days=7))
+
 def main():
     auth = get_0auth()
     tweets = get_user_tweets(
         api=get_twitter_api(auth),
         user="gvanrossum",
         number_of_tweets=5,
-        since=datetime.datetime(2015, 12, 14, 16, 34, 33))
-    print(tweets)
+        since=datetime(2015, 12, 14, 16, 34, 33))
+    #print(tweets)
 
     tweets = get_hashtag_tweets(
         api=get_twitter_api(auth),
         query="#python",
         number_of_tweets=20,
-        since=datetime.datetime(2015, 12, 26, 16, 34, 33))
-    print(tweets)
+        since=datetime(2015, 12, 26, 16, 34, 33))
+    #print(tweets)
 
-    pprint(last_10_tweets(user='gvanrossum'))
+    #pprint(last_10_tweets(user='gvanrossum'))
+    pprint(last_24h_tweets(user='raymondh'))
+
 
 if __name__ == "__main__":
 
