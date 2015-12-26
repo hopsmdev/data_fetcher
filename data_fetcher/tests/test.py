@@ -76,8 +76,6 @@ class TestTwitterAPI(unittest.TestCase):
             number_of_tweets=5,
             since=datetime.datetime.today())
         print(tweets)
-        for tweet in tweets:
-            print(tweet)
 
     def test_get_hashtag_tweets(self):
         tweets = twitter.get_hashtag_tweets(
@@ -86,9 +84,6 @@ class TestTwitterAPI(unittest.TestCase):
             number_of_tweets=5,
             since=datetime.datetime.today())
         print(tweets)
-        for tweet in tweets:
-            print(tweet)
-
 
 
 if __name__ == "__main__":

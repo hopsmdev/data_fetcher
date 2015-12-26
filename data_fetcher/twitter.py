@@ -2,6 +2,7 @@ import os
 import datetime
 from functools import partial
 from collections import namedtuple
+from pprint import pprint
 
 import tweepy
 
@@ -145,16 +146,18 @@ def get_twitter_data_config(
 
 def get_hashtag_tweets(api, query=None, number_of_tweets=None, since=None):
     _tweets = TweetsQuery(api)
-    for _tweet in _tweets(
-            query=query, number_of_tweets=number_of_tweets, since=since):
-        yield _tweet
+    return [tweet for tweet in _tweets(
+            query=query, number_of_tweets=number_of_tweets, since=since)]
 
 
 def get_user_tweets(api, user, number_of_tweets=None, since=None):
     _tweets = TweetsUser(api)
-    for _tweet in _tweets(
-            user=user, number_of_tweets=number_of_tweets, since=since):
-        yield _tweet
+    return [tweet for tweet in _tweets(
+            user=user, number_of_tweets=number_of_tweets, since=since)]
+
+
+last_10_tweets = partial(get_user_tweets,
+                         get_twitter_api(get_0auth()), number_of_tweets=10)
 
 
 def main():
@@ -164,19 +167,16 @@ def main():
         user="gvanrossum",
         number_of_tweets=5,
         since=datetime.datetime(2015, 12, 14, 16, 34, 33))
+    print(tweets)
 
-    for tweet in tweets:
-        print(tweet)
-
-    tweets2 = get_hashtag_tweets(
+    tweets = get_hashtag_tweets(
         api=get_twitter_api(auth),
         query="#python",
         number_of_tweets=20,
         since=datetime.datetime(2015, 12, 26, 16, 34, 33))
+    print(tweets)
 
-    print(tweets2)
-    for tweet in tweets2:
-        print(tweet)
+    pprint(last_10_tweets(user='gvanrossum'))
 
 if __name__ == "__main__":
 
