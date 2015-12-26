@@ -1,5 +1,6 @@
 import os
 import datetime
+from functools import partial
 from collections import namedtuple
 
 import tweepy
@@ -16,6 +17,10 @@ CREDENTIALS_INI = os.path.abspath(
     os.path.join(CURRENT_DIR, os.pardir, 'credentials.ini'))
 
 
+def get_tweepy_cursor(method, *args, **kwargs):
+    return tweepy.Cursor(method, *args, **kwargs)
+
+
 class Tweets(object):
     def __init__(self, api):
         self.api = api
@@ -28,8 +33,16 @@ class Tweets(object):
 
 class TweetsUser(Tweets):
     def __init__(self, api):
-        self.api = api
+        self.cursor = partial(tweepy.Cursor, api.user_timeline)
         super(TweetsUser, self).__init__(api)
+
+    def get_tweets(self, user, number_of_tweets, since):
+        if since:
+            return (tweet for tweet in
+                    self.cursor(screen_name=user).items(number_of_tweets)
+                    if tweet.created_at >= since)
+        else:
+            return self.cursor(screen_name=user).items(number_of_tweets)
 
     def __call__(self, user, number_of_tweets=20, since=None):
         """
@@ -40,32 +53,33 @@ class TweetsUser(Tweets):
             datetime.datetime.today()
         :return: tweepy Status object generator
         """
+
         if not number_of_tweets:
             number_of_tweets = MAX_TWEETS_NUMBER
-        for obj in tweepy.Cursor(
-                self.api.user_timeline,
-                screen_name=user).items(number_of_tweets):
-            if since:
-                if obj.created_at >= since:
-                    yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
-                else:
-                    break
-            else:
-                yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
+
+        for tweet in self.get_tweets(user, number_of_tweets, since):
+            yield self._tweet(str(tweet.created_at), tweet.text.encode('utf8'))
 
 
 class TweetsQuery(Tweets):
     def __init__(self, api):
-        self.api = api
+        self.cursor = partial(tweepy.Cursor, api.search)
         super(TweetsQuery, self).__init__(api)
 
-    def __call__(self, query, since, number_of_tweets=20):
+    def get_tweets(self, query, number_of_tweets, since):
+        if since:
+            return (tweet for tweet in
+                    self.cursor(q=query).items(number_of_tweets)
+                    if tweet.created_at >= since)
+        else:
+            return self.cursor(q=query).items(number_of_tweets)
+
+    def __call__(self, query, number_of_tweets=20, since=None):
+
         if not number_of_tweets:
             number_of_tweets = MAX_TWEETS_NUMBER
 
-        for obj in tweepy.Cursor(
-                self.api.search,
-                q=query, lang='en').items(number_of_tweets):
+        for obj in self.get_tweets(query, number_of_tweets, since):
             yield self._tweet(str(obj.created_at), obj.text.encode('utf8'))
 
 
@@ -129,9 +143,10 @@ def get_twitter_data_config(
         config_path=os.path.join(data_configs, config_ini)).twitter
 
 
-def get_hashtag_tweets(api, query=None, since=None):
+def get_hashtag_tweets(api, query=None, number_of_tweets=None, since=None):
         _tweets = TweetsQuery(api)
-        for _tweet in _tweets(query, since):
+        for _tweet in _tweets(
+                query=query, number_of_tweets=number_of_tweets, since=since):
             yield _tweet
 
 
@@ -147,20 +162,21 @@ def main():
     tweets = get_user_tweets(
         api=get_twitter_api(auth),
         user="gvanrossum",
-        number_of_tweets=0,
+        number_of_tweets=5,
         since=datetime.datetime(2015, 12, 14, 16, 34, 33))
 
     for tweet in tweets:
         print(tweet)
 
-    tweets = get_hashtag_tweets(
+    tweets2 = get_hashtag_tweets(
         api=get_twitter_api(auth),
-        query="python",
-        since=datetime.datetime.today())
+        query="#python",
+        number_of_tweets=20,
+        since=datetime.datetime(2015, 12, 26, 16, 34, 33))
 
-    for tweet in tweets:
+    print(tweets2)
+    for tweet in tweets2:
         print(tweet)
-
 
 if __name__ == "__main__":
 
