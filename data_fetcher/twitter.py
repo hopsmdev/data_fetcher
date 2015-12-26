@@ -144,17 +144,17 @@ def get_twitter_data_config(
 
 
 def get_hashtag_tweets(api, query=None, number_of_tweets=None, since=None):
-        _tweets = TweetsQuery(api)
-        for _tweet in _tweets(
-                query=query, number_of_tweets=number_of_tweets, since=since):
-            yield _tweet
+    _tweets = TweetsQuery(api)
+    for _tweet in _tweets(
+            query=query, number_of_tweets=number_of_tweets, since=since):
+        yield _tweet
 
 
 def get_user_tweets(api, user, number_of_tweets=None, since=None):
-        _tweets = TweetsUser(api)
-        for _tweet in _tweets(
-                user=user, number_of_tweets=number_of_tweets, since=since):
-            yield _tweet
+    _tweets = TweetsUser(api)
+    for _tweet in _tweets(
+            user=user, number_of_tweets=number_of_tweets, since=since):
+        yield _tweet
 
 
 def main():
